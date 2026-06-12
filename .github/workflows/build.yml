@@ -15,7 +15,7 @@ jobs:
     - name: Kodlari Cek
       uses: actions/checkout@v4
 
-    # Sanal makinedeki hazır paket yöneticisi ile hem Lua'yı hem Sol2'yi tek komutla kuruyoruz
+    # vcpkg ile sol2 kurarken sistem otomatik olarak bağımlı olduğu güncel Lua sürümünü de yükler
     - name: vcpkg ile Sol2 ve Lua Kur
       run: |
         vcpkg install sol2:x64-windows
@@ -23,10 +23,10 @@ jobs:
     - name: Geliştirici Komut Satırını Aç (Developer Command Prompt)
       uses: ilammy/msvc-dev-cmd@v1
 
-    # vcpkg klasör yollarını derleyiciye (cl.exe) otomatik olarak tanıtıyoruz
+    # /std:c++17 parametresi eklendi ve hem sol2 hem lua include yolları derleyiciye tanıtıldı
     - name: main.cpp Kodunu Derle
       run: |
-        cl.exe /EHsc /O2 /I"C:/vcpkg/installed/x64-windows/include" main.cpp /link /LIBPATH:"C:/vcpkg/installed/x64-windows/lib" /SUBSYSTEM:WINDOWS wininet.lib user32.lib gdi32.lib
+        cl.exe /EHsc /O2 /std:c++17 /I"C:/vcpkg/installed/x64-windows/include" main.cpp /link /LIBPATH:"C:/vcpkg/installed/x64-windows/lib" /SUBSYSTEM:WINDOWS wininet.lib user32.lib gdi32.lib
         
     - name: Derlenen EXE Dosyasini Teslim Et (Artifact)
       uses: actions/upload-artifact@v4
