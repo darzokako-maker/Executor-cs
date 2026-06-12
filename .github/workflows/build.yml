@@ -1,4 +1,5 @@
-name: Direct C++ Code Build CI
+
+name: Thread-Safe Win32 AI Executor CI (CMake Edition)
 
 on:
   push:
@@ -8,33 +9,48 @@ on:
 
 jobs:
   build:
-    name: Windows x64 Saf C++ Derleme
+    name: Windows x64 Otomatik Derleme
     runs-on: windows-latest
 
     steps:
     - name: Kodlari Cek
       uses: actions/checkout@v4
 
-    # vcpkg'yi entegre kuran resmi GitHub Actions adımını çağırıyoruz
-    - name: vcpkg ve Bağımlılıkları Otomatik Yapılandır
-      uses: johnwason/vcpkg-action@v6
-      with:
-        pkgs: lua sol2
-        triplet: x64-windows
-        token: ${{ github.token }}
-
-    # Geliştirici komut satırını vcpkg değişkenleriyle birlikte açıyoruz
-    - name: Geliştirici Komut Satırını Aç (Developer Command Prompt)
-      uses: ilammy/msvc-dev-cmd@v1
-
-    # vcpkg_target_triplet ile derleyiciye lua.h ve sol2 klasörlerini otomatik enjekte ediyoruz
-    - name: main.cpp Kodunu Derle
+    # 1. GitHub sunucusunda hazır duran vcpkg ile paketleri kararlı bir şekilde kuruyoruz
+    - name: Bağımlılıkları Kur (sol2, lua, nlohmann-json)
       run: |
-        cl.exe /EHsc /O2 /std:c++17 /I"${{ env.VCPKG_ROOT }}/installed/x64-windows/include" main.cpp /link /LIBPATH:"${{ env.VCPKG_ROOT }}/installed/x64-windows/lib" lua54.lib /SUBSYSTEM:WINDOWS wininet.lib user32.lib gdi32.lib
-        
+        vcpkg install sol2 nlohmann-json --triplet x64-windows
+
+    # 2. Sanal bir CMakeLists.txt dosyasını anında oluşturup yolları otomatik bağlatıyoruz
+    - name: Geçici CMake Projesi Oluştur
+      run: |
+        echo "cmake_minimum_required(VERSION 3.15)" > CMakeLists.txt
+        echo "project(CS2_AI_Executor LANGUAGES CXX)" >> CMakeLists.txt
+        echo "set(CMAKE_CXX_STANDARD 17)" >> CMakeLists.txt
+        echo "set(CMAKE_CXX_STANDARD_REQUIRED ON)" >> CMakeLists.txt
+        echo "find_package(sol2 CONFIG REQUIRED)" >> CMakeLists.txt
+        echo "find_package(nlohmann_json CONFIG REQUIRED)" >> CMakeLists.txt
+        echo "add_executable(main main.cpp)" >> CMakeLists.txt
+        echo "target_link_libraries(main PRIVATE sol2::sol2 nlohmann_json::nlohmann_json)" >> CMakeLists.txt
+        echo "target_link_libraries(main PRIVATE wininet user32 gdi32)" >> CMakeLists.txt
+      shell: bash
+
+    # 3. CMake ile projeyi yapılandırıyoruz (vcpkg entegrasyonu otomatik yapılıyor)
+    - name: CMake Yapılandırması (Configure)
+      run: |
+        cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows
+
+    # 4. Projeyi Release modunda derliyoruz
+    - name: Projeyi Derle (Build)
+      run: |
+        cmake --build build --config Release
+
+    # 5. Oluşan kararlı EXE dosyasını artifact olarak teslim alıyoruz
     - name: Derlenen EXE Dosyasini Teslim Et (Artifact)
       uses: actions/upload-artifact@v4
       with:
         name: CS2-Secure-AI-Executor
-        path: main.exe
-        
+        path: build/Release/main.exe
+
+
+
