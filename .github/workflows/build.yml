@@ -16,26 +16,43 @@ jobs:
     - name: Kodlari Cek
       uses: actions/checkout@v4
 
-    # 1. vcpkg ile sol2, lua ve nlohmann-json paketlerini açıkça kuruyoruz
+    # 1. vcpkg ile sol2, lua ve nlohmann-json paketlerini kuruyoruz
     - name: Bağımlılıkları Kur (sol2, lua, nlohmann-json)
       run: |
         vcpkg install sol2 lua nlohmann-json --triplet x64-windows
 
-    # 2. Lua'yı da projeye dahil eden kararlı bir CMakeLists.txt oluşturuyoruz
+    # 2. Heredoc yöntemiyle hatasız, kaçış karaktersiz CMakeLists.txt oluşturuyoruz
     - name: Geçici CMake Projesi Oluştur
-      run: |
-        echo "cmake_minimum_required(VERSION 3.15)" > CMakeLists.txt
-        echo "project(CS2_AI_Executor LANGUAGES CXX)" >> CMakeLists.txt
-        echo "set(CMAKE_CXX_STANDARD 17)" >> CMakeLists.txt
-        echo "set(CMAKE_CXX_STANDARD_REQUIRED ON)" >> CMakeLists.txt
-        echo "find_package(sol2 CONFIG REQUIRED)" >> CMakeLists.txt
-        echo "find_package(nlohmann_json CONFIG REQUIRED)" >> CMakeLists.txt
-        echo "find_package(Lua REQUIRED)" >> CMakeLists.txt
-        echo "add_executable(main main.cpp)" >> CMakeLists.txt
-        echo "target_include_directories(main PRIVATE \${LUA_INCLUDE_DIR})" >> >> CMakeLists.txt
-        echo "target_link_libraries(main PRIVATE sol2::sol2 nlohmann_json::nlohmann_json \${LUA_LIBRARIES})" >> CMakeLists.txt
-        echo "target_link_libraries(main PRIVATE wininet user32 gdi32)" >> CMakeLists.txt
       shell: bash
+      run: |
+        cat << 'EOF' > CMakeLists.txt
+        cmake_minimum_required(VERSION 3.15)
+        project(CS2_AI_Executor LANGUAGES CXX)
+        
+        set(CMAKE_CXX_STANDARD 17)
+        set(CMAKE_CXX_STANDARD_REQUIRED ON)
+        
+        # Gerekli paketleri tanımlıyoruz
+        find_package(sol2 CONFIG REQUIRED)
+        find_package(nlohmann_json CONFIG REQUIRED)
+        find_package(Lua REQUIRED)
+        
+        # Çalıştırılabilir dosyamızı tanımlıyoruz
+        add_executable(main main.cpp)
+        
+        # Lua başlık dosyalarını dahil ediyoruz
+        target_include_directories(main PRIVATE ${LUA_INCLUDE_DIR})
+        
+        # Gerekli tüm kütüphaneleri bağlıyoruz
+        target_link_libraries(main PRIVATE 
+            sol2::sol2 
+            nlohmann_json::nlohmann_json 
+            ${LUA_LIBRARIES}
+            wininet 
+            user32 
+            gdi32
+        )
+        EOF
 
     # 3. CMake ile projeyi yapılandırıyoruz (vcpkg entegrasyonu otomatik yapılıyor)
     - name: CMake Yapılandırması (Configure)
@@ -53,6 +70,5 @@ jobs:
       with:
         name: CS2-Secure-AI-Executor
         path: build/Release/main.exe
-
 
 
