@@ -1,0 +1,34 @@
+
+name: Thread-Safe Win32 AI Executor CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    name: Windows x64 Guvenli Derleme
+    runs-on: windows-latest
+
+    steps:
+    - name: Depoyu Indir
+      uses: actions/checkout@v4
+
+    - name: MSBuild Yukle
+      uses: microsoft/setup-msbuild@v2
+
+    - name: C++ Projesini Olustur ve Derle
+      run: |
+        msbuild YourProjectName.sln /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143
+
+    - name: Derlenen Executor'i Teslim Et (Artifact)
+      uses: actions/upload-artifact@v4
+      with:
+        name: CS2-Secure-AI-Executor
+        path: |
+          x64/Release/*.exe
+
+
+
