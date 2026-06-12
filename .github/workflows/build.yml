@@ -15,15 +15,23 @@ jobs:
     - name: Kodlari Cek
       uses: actions/checkout@v4
 
-    # MSBuild yerine doğrudan CL (Microsoft C++ Derleyicisi) ortamını çağırıyoruz
+    # Eksik olan Sol2 kütüphanesini GitHub üzerinden sunucuya otomatik indiriyoruz
+    - name: Sol2 Kütüphanesini İndir ve Kur
+      run: |
+        mkdir include
+        cd include
+        curl -L -o sol.zip https://github.com/TheOdinData/sol2/archive/refs/heads/main.zip
+        tar -xf sol.zip
+        mv sol2-main/include/sol .
+        cd ..
+
     - name: Geliştirici Komut Satırını Aç (Developer Command Prompt)
       uses: ilammy/msvc-dev-cmd@v1
 
-    # Doğrudan main.cpp dosyasını exe haline getiriyoruz, .sln dosyasına gerek kalmıyor
+    # /Iinclude parametresini ekleyerek derleyiciye az önce indirdiğimiz klasörü gösteriyoruz
     - name: main.cpp Kodunu Derle
       run: |
-        cl.exe /EHsc /O2 main.cpp /link /SUBSYSTEM:WINDOWS wininet.lib user32.lib gdi32.lib
-      # NOT: Eğer projedeki Sol2/Lua include hatası verirse, buraya /I kütüphane_yolu eklenebilir.
+        cl.exe /EHsc /O2 /Iinclude main.cpp /link /SUBSYSTEM:WINDOWS wininet.lib user32.lib gdi32.lib
 
     - name: Derlenen EXE Dosyasini Teslim Et (Artifact)
       uses: actions/upload-artifact@v4
