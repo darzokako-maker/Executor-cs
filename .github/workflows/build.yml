@@ -15,27 +15,22 @@ jobs:
     - name: Kodlari Cek
       uses: actions/checkout@v4
 
-    # Eksik olan Sol2 kütüphanesini GitHub üzerinden sunucuya otomatik indiriyoruz
-    - name: Sol2 Kütüphanesini İndir ve Kur
+    # Sanal makinedeki hazır paket yöneticisi ile hem Lua'yı hem Sol2'yi tek komutla kuruyoruz
+    - name: vcpkg ile Sol2 ve Lua Kur
       run: |
-        mkdir include
-        cd include
-        curl -L -o sol.zip https://github.com/TheOdinData/sol2/archive/refs/heads/main.zip
-        tar -xf sol.zip
-        mv sol2-main/include/sol .
-        cd ..
+        vcpkg install sol2:x64-windows
 
     - name: Geliştirici Komut Satırını Aç (Developer Command Prompt)
       uses: ilammy/msvc-dev-cmd@v1
 
-    # /Iinclude parametresini ekleyerek derleyiciye az önce indirdiğimiz klasörü gösteriyoruz
+    # vcpkg klasör yollarını derleyiciye (cl.exe) otomatik olarak tanıtıyoruz
     - name: main.cpp Kodunu Derle
       run: |
-        cl.exe /EHsc /O2 /Iinclude main.cpp /link /SUBSYSTEM:WINDOWS wininet.lib user32.lib gdi32.lib
-
+        cl.exe /EHsc /O2 /I"C:/vcpkg/installed/x64-windows/include" main.cpp /link /LIBPATH:"C:/vcpkg/installed/x64-windows/lib" /SUBSYSTEM:WINDOWS wininet.lib user32.lib gdi32.lib
+        
     - name: Derlenen EXE Dosyasini Teslim Et (Artifact)
       uses: actions/upload-artifact@v4
       with:
-        name: CS2-Direct-Executor
+        name: CS2-Secure-AI-Executor
         path: main.exe
         
