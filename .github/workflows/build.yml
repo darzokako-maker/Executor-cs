@@ -1,5 +1,4 @@
-
-name: Thread-Safe Win32 AI Executor CI
+name: Direct C++ Code Build CI
 
 on:
   push:
@@ -9,26 +8,26 @@ on:
 
 jobs:
   build:
-    name: Windows x64 Guvenli Derleme
+    name: Windows x64 Saf C++ Derleme
     runs-on: windows-latest
 
     steps:
-    - name: Depoyu Indir
+    - name: Kodlari Cek
       uses: actions/checkout@v4
 
-    - name: MSBuild Yukle
-      uses: microsoft/setup-msbuild@v2
+    # MSBuild yerine doğrudan CL (Microsoft C++ Derleyicisi) ortamını çağırıyoruz
+    - name: Geliştirici Komut Satırını Aç (Developer Command Prompt)
+      uses: ilammy/msvc-dev-cmd@v1
 
-    - name: C++ Projesini Olustur ve Derle
+    # Doğrudan main.cpp dosyasını exe haline getiriyoruz, .sln dosyasına gerek kalmıyor
+    - name: main.cpp Kodunu Derle
       run: |
-        msbuild YourProjectName.sln /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143
+        cl.exe /EHsc /O2 main.cpp /link /SUBSYSTEM:WINDOWS wininet.lib user32.lib gdi32.lib
+      # NOT: Eğer projedeki Sol2/Lua include hatası verirse, buraya /I kütüphane_yolu eklenebilir.
 
-    - name: Derlenen Executor'i Teslim Et (Artifact)
+    - name: Derlenen EXE Dosyasini Teslim Et (Artifact)
       uses: actions/upload-artifact@v4
       with:
-        name: CS2-Secure-AI-Executor
-        path: |
-          x64/Release/*.exe
-
-
-
+        name: CS2-Direct-Executor
+        path: main.exe
+        
