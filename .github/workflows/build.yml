@@ -38,7 +38,8 @@ jobs:
         find_package(Lua REQUIRED)
         
         # Çalıştırılabilir dosyamızı tanımlıyoruz
-        add_executable(main main.cpp)
+        # NOT: WIN32 parametresi, giriş noktasının WinMain olarak tanınmasını sağlar ve LNK2019 hatasını çözer!
+        add_executable(main WIN32 main.cpp)
         
         # Lua başlık dosyalarını dahil ediyoruz
         target_include_directories(main PRIVATE ${LUA_INCLUDE_DIR})
@@ -70,5 +71,6 @@ jobs:
       with:
         name: CS2-Secure-AI-Executor
         path: build/Release/main.exe
+
 
 
