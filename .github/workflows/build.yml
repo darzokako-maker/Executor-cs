@@ -16,12 +16,12 @@ jobs:
     - name: Kodlari Cek
       uses: actions/checkout@v4
 
-    # 1. GitHub sunucusunda hazır duran vcpkg ile paketleri kararlı bir şekilde kuruyoruz
+    # 1. vcpkg ile sol2, lua ve nlohmann-json paketlerini açıkça kuruyoruz
     - name: Bağımlılıkları Kur (sol2, lua, nlohmann-json)
       run: |
-        vcpkg install sol2 nlohmann-json --triplet x64-windows
+        vcpkg install sol2 lua nlohmann-json --triplet x64-windows
 
-    # 2. Sanal bir CMakeLists.txt dosyasını anında oluşturup yolları otomatik bağlatıyoruz
+    # 2. Lua'yı da projeye dahil eden kararlı bir CMakeLists.txt oluşturuyoruz
     - name: Geçici CMake Projesi Oluştur
       run: |
         echo "cmake_minimum_required(VERSION 3.15)" > CMakeLists.txt
@@ -30,8 +30,10 @@ jobs:
         echo "set(CMAKE_CXX_STANDARD_REQUIRED ON)" >> CMakeLists.txt
         echo "find_package(sol2 CONFIG REQUIRED)" >> CMakeLists.txt
         echo "find_package(nlohmann_json CONFIG REQUIRED)" >> CMakeLists.txt
+        echo "find_package(Lua REQUIRED)" >> CMakeLists.txt
         echo "add_executable(main main.cpp)" >> CMakeLists.txt
-        echo "target_link_libraries(main PRIVATE sol2::sol2 nlohmann_json::nlohmann_json)" >> CMakeLists.txt
+        echo "target_include_directories(main PRIVATE \${LUA_INCLUDE_DIR})" >> >> CMakeLists.txt
+        echo "target_link_libraries(main PRIVATE sol2::sol2 nlohmann_json::nlohmann_json \${LUA_LIBRARIES})" >> CMakeLists.txt
         echo "target_link_libraries(main PRIVATE wininet user32 gdi32)" >> CMakeLists.txt
       shell: bash
 
