@@ -1,76 +1,35 @@
-
-name: Thread-Safe Win32 AI Executor CI (CMake Edition)
+name: CS2 Fully Updated Schema Build
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "master" ]
+  workflow_dispatch:
 
 jobs:
   build:
-    name: Windows x64 Otomatik Derleme
     runs-on: windows-latest
 
     steps:
-    - name: Kodlari Cek
+    - name: Depoyu Klonla
       uses: actions/checkout@v4
 
-    # 1. vcpkg ile sol2, lua ve nlohmann-json paketlerini kuruyoruz
-    - name: Bağımlılıkları Kur (sol2, lua, nlohmann-json)
-      run: |
-        vcpkg install sol2 lua nlohmann-json --triplet x64-windows
+    - name: Python 3.10 Kurulumu
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
 
-    # 2. Heredoc yöntemiyle hatasız, kaçış karaktersiz CMakeLists.txt oluşturuyoruz
-    - name: Geçici CMake Projesi Oluştur
-      shell: bash
+    - name: Modulleri Yukle
       run: |
-        cat << 'EOF' > CMakeLists.txt
-        cmake_minimum_required(VERSION 3.15)
-        project(CS2_AI_Executor LANGUAGES CXX)
-        
-        set(CMAKE_CXX_STANDARD 17)
-        set(CMAKE_CXX_STANDARD_REQUIRED ON)
-        
-        # Gerekli paketleri tanımlıyoruz
-        find_package(sol2 CONFIG REQUIRED)
-        find_package(nlohmann_json CONFIG REQUIRED)
-        find_package(Lua REQUIRED)
-        
-        # Çalıştırılabilir dosyamızı tanımlıyoruz
-        # NOT: WIN32 parametresi, giriş noktasının WinMain olarak tanınmasını sağlar ve LNK2019 hatasını çözer!
-        add_executable(main WIN32 main.cpp)
-        
-        # Lua başlık dosyalarını dahil ediyoruz
-        target_include_directories(main PRIVATE ${LUA_INCLUDE_DIR})
-        
-        # Gerekli tüm kütüphaneleri bağlıyoruz
-        target_link_libraries(main PRIVATE 
-            sol2::sol2 
-            nlohmann_json::nlohmann_json 
-            ${LUA_LIBRARIES}
-            wininet 
-            user32 
-            gdi32
-        )
-        EOF
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
 
-    # 3. CMake ile projeyi yapılandırıyoruz (vcpkg entegrasyonu otomatik yapılıyor)
-    - name: CMake Yapılandırması (Configure)
+    - name: PyInstaller ile Sifirdan Derleme Yap
       run: |
-        cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows
+        pyinstaller --onefile --noconsole --name="CS2_Fully_Updated_ESP" main.py
 
-    # 4. Projeyi Release modunda derliyoruz
-    - name: Projeyi Derle (Build)
-      run: |
-        cmake --build build --config Release
-
-    # 5. Oluşan kararlı EXE dosyasını artifact olarak teslim alıyoruz
-    - name: Derlenen EXE Dosyasini Teslim Et (Artifact)
+    - name: Paket Dosyasini Yukle (Artifact)
       uses: actions/upload-artifact@v4
       with:
-        name: CS2-Secure-AI-Executor
-        path: build/Release/main.exe
-
-
-
+        name: CS2-Fully-Updated-Package
+        path: dist/CS2_Fully_Updated_ESP.exe
+        
