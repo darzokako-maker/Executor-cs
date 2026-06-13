@@ -1,0 +1,4 @@
+pymem==1.13.1
+pyMeow==1.53.2
+pyinstaller==6.5.0
+
